@@ -24,7 +24,7 @@
 		truckings=jsonObj.Mainline.Table.Row;
 		html_text+="<tbody>";
 		html_text+="<tr>"; 
-		x=200; y=100;
+		x=300; y=150;
 		for(i=0;i<header.length;i++){
 			html_text+="<th>"+header[i]+"</th>";
 		}
@@ -47,7 +47,7 @@
 				else if(trucking_keys[j]=="Hubs"){
 					hub=truckingNodeList[prop].Hub;
 					html_text+="<td>";
-					if(hub.length > 0){
+					if(hub!=null&&hub.length > 0){
 						html_text+="<ul>";
 						for(k=0;k<hub.length;k++){
 							if(k == 0) html_text+="<li><b>"+hub[k]+"</b></li>";
@@ -91,7 +91,7 @@ function viewJSON(what){
 			xmlhttp.send();
 			jsonObj= JSON.parse(xmlhttp.responseText);
 		}catch(e){
-			alert("The JSON file does not exist!");
+			alert("The valid JSON file does not exist!");
 			return;
 		}
 		return jsonObj;
