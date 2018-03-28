@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Travel and Entertainment Search</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.4.8/angular.js"></script>
+	<script src="https://code.angularjs.org/1.4.8/angular-animate.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.21.0/moment.min.js"></script>
+
+	<style>
+		table#first{
+			border-radius: 10px;
+			border-collapse: separate;
+			border: 3px solid #ddd;
+			background-color: #f7f7f7;
+			margin: 20px auto;
+		}
+		#first th{
+			font-size: 22px;
+			height:60px;
+			font-weight: normal;
+			font-weight: bold;
+		}
+		#first td{
+			height:150px;
+			line-height: 160%;
+			text-align: left;
+		}
+		#norecords{
+			margin: 0px auto;
+		}
+		.btn-light{
+			color: black;
+			border: 1px solid #bbb;
+		}
+		.form-group.required .col-form-label:after {
+			content:"*";
+			color:red;
+		}
+		.help-block{
+			color:red;
+		}
+		.is-invalid{
+			border: 2px solid red;
+		}
+
+		#searchPage.animate-show {
+			opacity:1;
+			border:0px;
+			background:white;
+			position:relative;
+			left:0%;
+		}
+		#detailsPage.animate-show {
+			opacity:1;
+			border:0px;
+			background:white;
+			position:relative;
+			left:0%;
+		}
+		.animate-show.ng-hide-add.ng-hide-add-active{
+			-webkit-transition:all linear 0.0s;
+		    -moz-transition:all linear 0.0s;
+		    -o-transition:all linear 0.0s;
+			transition:all linear 0.0s;
+		}
+		.animate-show.ng-hide-remove.ng-hide-remove-active {
+			-webkit-transition:all linear 1.0s;
+		    -moz-transition:all linear 1.0s;
+		    -o-transition:all linear 1.0s;
+			transition:all linear 1.0s;
+		}
+		#searchPage.animate-show.ng-hide {
+			left:100%;
+		}
+		#detailsPage.animate-show.ng-hide {
+			left:-100%;
+		}
+
+		.stars-container {
+			display: inline-block;
+			color: #ff4500;
+			overflow: hidden;
+		}
+
+		.custom-select:focus{
+		    border-color: #ced4da;
+		}
+
+		.animationIf.ng-show,{
+		  opacity: 1;
+		}
+		.animationIf.ng-hide-add.ng-hide-add-active{
+		  -webkit-transition: opacity ease-in-out 0s;
+		  -moz-transition: opacity ease-in-out 0s;
+		  -ms-transition: opacity ease-in-out 0s;
+		  -o-transition: opacity ease-in-out 0s;
+		  transition: opacity ease-in-out 0s;
+		}
+		.animationIf.ng-hide-remove.ng-hide-remove-active {
+		  -webkit-transition: opacity ease-in-out 1s;
+		  -moz-transition: opacity ease-in-out 1s;
+		  -ms-transition: opacity ease-in-out 1s;
+		  -o-transition: opacity ease-in-out 1s;
+		  transition: opacity ease-in-out 1s;
+		}
+		.animationIf.ng-hide {
+		  opacity: 0;
+		}
+
+		.fa-star{
+			color: gold;
+		}
+	</style>
+	<script type="text/javascript">
+		$(document).ready(function(){
+			geoEnable = false;
+			$.getJSON('//ip-api.com/json?callback=?', function( data ) {
+				if(data) {
+					geoEnable = true;
+					originAddress = {lat: data.lat, lng: data.lon};
+				}
+				var str_json = JSON.stringify(data);
+				$("#json_string").val(str_json);									
+			});
+		});
+
+		function fillInAddress(){
+		};
+
+		function initMap(){
+			map = new google.maps.Map(document.getElementById('map'), {
+				center: {lat: -33.866, lng: 151.196},
+				zoom: 15
+			});
+			marker = new google.maps.Marker({
+	          position: {lat: -33.866, lng: 151.196},
+	          map: map
+	        });
+
+	        var autocomplete = new google.maps.places.Autocomplete(
+	            (document.getElementById('location_custom')),
+	            {types: ['geocode']});
+	        autocomplete.addListener('place_changed', fillInAddress);
+
+	        var autocompleteForMap = new google.maps.places.Autocomplete(
+	            (document.getElementById('fromPlace')),
+	            {types: ['geocode']});
+	        autocompleteForMap.addListener('place_changed', fillInAddress);
+
+	        directionsService = new google.maps.DirectionsService();
+	  		directionsDisplay = new google.maps.DirectionsRenderer();
+	  		//directionsDisplay.setMap(map);
+	  		//directionsDisplay.setPanel(document.getElementById('pannel'));
+		};
+
+	   	function triggerDetailButton(butt){
+	    	place_id = $(butt).parent().parent().find('th:first').attr('name');
+			$("table#second tr").css("background-color","white");
+			$(butt).parent().parent().css("background-color","#ffcc66");
+			$("#details").prop("disabled",false);
+			$("#details").click();
+	   	};
+
+	   	function triggerFavoritesButton(butt){
+	   		var id = $(butt).parent().parent().find('th:first').attr('name');
+	   		var star = $(butt).find("span").attr("class");
+	   		if(star == "fa fa-star-o"){
+	   			$(butt).find("span").attr("class","fa fa-star");
+   				var myOrder = JSON.parse(localStorage.getItem("order"));
+   				myOrder.push(id);
+   				localStorage.setItem("order",JSON.stringify(myOrder));
+	   			localStorage.setItem(id,JSON.stringify(myList[id]));
+	   		}
+	   		else{
+	   			$(butt).find("span").attr("class","fa fa-star-o");
+	   			var myOrder = JSON.parse(localStorage.getItem("order"));
+	   			for(var i=0;i<myOrder.length;i++){
+	   				if(myOrder[i]==id){
+	   					myOrder.splice(i, 1);
+	   					break;
+	   				}
+	   			}
+	   			localStorage.setItem("order",JSON.stringify(myOrder));
+	   			localStorage.removeItem(id);
+	   		}
+	   	};
+
+	   	function triggerDetailButtonInFavor(butt){
+	    	place_id = $(butt).parent().parent().find('td:eq(3)').attr('name');
+			$("table#third tr").css("background-color","white");
+			$(butt).parent().parent().css("background-color","#ffcc66");
+			$("#favor_detail").prop("disabled",false);
+			$("#details").click();
+	   	};
+
+	   	function deleteFavoritesButton(butt){
+	   		var id = $(butt).parent().attr('name');
+   			var myOrder = JSON.parse(localStorage.getItem("order"));
+   			for(var i=0;i<myOrder.length;i++){
+   				if(myOrder[i]==id){
+   					myOrder.splice(i, 1);
+   					break;
+   				}
+   			}
+   			localStorage.setItem("order",JSON.stringify(myOrder));
+	   		localStorage.removeItem(id);
+	   		$("#favorites").click();
+	   		$("th[name="+id+"]").parent().find("td:eq(3)").find("button").find("span").attr("class","fa fa-star-o");
+	   	}
+
+	    function generateTable(records){
+	    	if(records["results"].length==0){
+				$("#norecords").html("<div class='alert alert-warning col-md-12' role='alert'>No records.</div>");
+				$("#details").css("display","none");
+			}
+			else{
+				var i=0;
+		    	var text = "";
+		    	text+="<thead><tr><th scope='col'>#</th><th scope='col'>Category</th><th scope='col'>Name</th><th scope='col'>Address</th><th scope='col'>Favorite</th><th scope='col'>Details</th></tr></thead><tbody>";
+				for(;i<records["results"].length;i++){
+					var starClass = localStorage.getItem(records["results"][i]["place_id"]) === null ? "fa fa-star-o" : "fa fa-star";
+					myList[records["results"][i]["place_id"]] = records["results"][i];
+					text+="<tr><th scope='row' name='"+records["results"][i]["place_id"]+"'>"+(i+1)+"</th><td><img style='width:40px' src='"+records["results"][i]["icon"]+"'></img>"+"</td><td>"+records["results"][i]["name"]+"</td><td>"+records["results"][i]["vicinity"]+"</td><td><button type='button' class='btn btn-light' onclick='triggerFavoritesButton(this)'><span class='"+starClass+"'></span></button></td><td><button type='button' class='btn btn-light' onclick='triggerDetailButton(this)'><span class='fa fa-chevron-right'></span></button></td></tr>";
+				}
+				text+="</tbody>";
+				curPages[pageIndex] = text;
+				$("#second").html(text);
+				$("#details").css("display","inline");
+			}
+			if(records.next_page_token != undefined && records.next_page_token.length > 0){
+				$("#next").css("visibility","visible");
+				next_page = records.next_page_token;
+				prePages[pageIndex] = next_page;
+			}
+			else{
+				$("#next").css("visibility","hidden");
+			}
+			if(pageIndex > 0){
+				$("#previous").css("visibility","visible");
+			}
+			else{
+				$("#previous").css("visibility","hidden");
+			}
+			$("#progressBar").css("visibility","hidden");
+	    };
+
+	    function openHoursString(day,opening){
+	    	var index = 0;
+	    	switch(day){
+	    		case "Monday":
+	    			index = 0;
+	    			break;
+	    		case "Tuesday":
+	    			index = 1;
+	    			break;
+	    		case "Wednesday":
+	    			index = 2;
+	    			break;
+	    		case "Thursday":
+	    			index = 3;
+	    			break;
+	    		case "Friday":
+	    			index = 4;
+	    			break;
+	    		case "Saturday":
+	    			index = 5;
+	    			break;
+	    		case "Sunday":
+	    			index = 6;
+	    			break;
+	    		default:
+	    			index = 0;
+	    	}
+	    	var weekdayString = opening.weekday_text[index];
+	    	var text = opening.open_now ? "Open now:" : "Closed";
+	    	if(opening.open_now){
+	    		text += weekdayString.split(/:(.+)/)[1];
+	    	}
+	    	text += "<a class='ml-3' href='#openHoursModal' data-toggle='modal'>Daily open hours</a>";
+	    	var tableText = "<tbody>";
+	    	var i = 0;
+    		var weekStr = weekdayString.split(':')[0];
+    		var timeStr = weekdayString.split(/:(.+)/)[1];
+	    	tableText += "<tr><th>"+weekStr+"</th><th>"+timeStr+"</th></tr>";
+	    	for(;i<7;i++){
+	    		if(i == index){
+	    			continue;
+	    		}
+	    		var weekStr = opening.weekday_text[i].split(':')[0];
+	    		var timeStr = opening.weekday_text[i].split(/:(.+)/)[1];
+	    		tableText += "<tr><td>"+weekStr+"</td><td>"+timeStr+"</td></tr>";
+	    	}
+	    	tableText += "</tbody>";
+	    	$("#forth").html(tableText);
+	    	return text;
+	    };
+
+	    function generateInfoTable(place){
+	    	var text = "<tbody>";
+	    	if(place.formatted_address != null && place.formatted_address.length > 0){
+	    		text += "<tr><th>Address</th><td><div class='row'>"+place.formatted_address+"</div></td></tr>";
+	    	}
+	    	if(place.international_phone_number != null && place.international_phone_number.length > 0){
+	    		text += "<tr><th>Phone Number</th><td><div class='row'>"+place.international_phone_number+"</div></td></tr>";
+	    	}
+	    	if(place.price_level != null && place.price_level > 0){
+	    		text += "<tr><th>Price Level</th><td><div class='row'>"+"$".repeat(place.price_level)+"</div></td></tr>";
+	    	}
+	    	if(place.rating != null && place.rating >= 0){
+	    		text += "<tr><th>Rating</th><td><div class='row'>"+place.rating+"<div class='stars-container ml-2' id='stars'>★★★★★</div>"+"</div></td></tr>";
+	    	}
+	    	if(place.url != null && place.url.length > 0){
+	    		text += "<tr><th>Google Page</th><td><div class='row'><a target='_blank' href='"+place.url+"'>"+place.url+"</a></div></td></tr>";
+	    	}
+	    	if(place.website != null && place.website.length > 0){
+	    		text += "<tr><th>Website</th><td><div class='row'><a target='_blank' href='"+place.website+"'>"+place.website+"</a></div></td></tr>";
+	    	}
+	    	if(place.opening_hours != null && place.utc_offset != null){
+	    		var day = moment.utc().utcOffset(place.utc_offset).format('dddd');
+	    		text += "<tr><th>Hours</th><td><div class='row'>"+openHoursString(day,place.opening_hours)+"</div></td></tr>";
+	    	}
+	    	text += "</tbody>";
+	    	$("#infoTable").html(text);
+	    	if(place.rating != null && place.rating >= 0){
+	    		fullWidth = $("#stars").width();
+	    		$("#stars").width(place.rating/5*fullWidth + "px");
+	    	}
+	    };
+
+	    function generatePhotosContent(place){
+	    	if(place.photos == undefined || place.photos.length == 0){
+	    		$("#firstCol").html("");
+	    		$("#secondCol").html("");
+	    		$("#thirdCol").html("");
+	    		$("#forthCol").html("");
+	    		$("#photoWarning").html("<div class='alert alert-warning col-md-12' role='alert'>No records.</div>");
+	    	}
+	    	else{
+	    		var text = "";
+	    		var i = 0;
+	    		var origin = "";
+	    		for(;i<place.photos.length;i+=4){
+	    			origin = place.photos[i].getUrl({'maxWidth': place.photos[i].width});
+	    			text += "<div class='mt-3'><a href='"+origin+"' target='_blank'><img src='"+origin+"' class='img-thumbnail' style='width:100%'></img></a></div>";
+	    		}
+	    		$("#firstCol").html(text);
+	    		text = "";
+	    		i = 1;
+	    		for(;i<place.photos.length;i+=4){
+	    			origin = place.photos[i].getUrl({'maxWidth': place.photos[i].width});
+	    			text += "<div class='mt-3'><a href='"+origin+"' target='_blank'><img src='"+origin+"' class='img-thumbnail' style='width:100%'></img></a></div>";
+	    		}
+	    		$("#secondCol").html(text);
+	    		text = "";
+	    		i = 2;
+	    		for(;i<place.photos.length;i+=4){
+	    			origin = place.photos[i].getUrl({'maxWidth': place.photos[i].width});
+	    			text += "<div class='mt-3'><a href='"+origin+"' target='_blank'><img src='"+origin+"' class='img-thumbnail' style='width:100%'></img></a></div>";
+	    		}
+	    		$("#thirdCol").html(text);
+	    		text = "";
+	    		i = 3;
+	    		for(;i<place.photos.length;i+=4){
+	    			origin = place.photos[i].getUrl({'maxWidth': place.photos[i].width});
+	    			text += "<div class='mt-3'><a href='"+origin+"' target='_blank'><img src='"+origin+"' class='img-thumbnail' style='width:100%'></img></a></div>";
+	    		}
+	    		$("#forthCol").html(text);
+	    		$("#photoWarning").html("");
+	    	}
+	    };
+
+	    function setMapsContent(place){
+	    	var setPlace = $("input[name=place]:checked").val();
+	    	if(setPlace == "here"){
+	    		$("#fromPlace").val("Your location");
+	    	}
+	    	else{
+	    		$("#fromPlace").val($("#location_custom").val());
+	    	}
+	    	$("#toPlace").val(place.name+", "+place.formatted_address);
+	    	$("#directions").prop("disabled",false);
+
+			map.setCenter(place.geometry.location);
+			marker.setMap(null);
+			marker.setPosition(place.geometry.location);
+			marker.setMap(map);
+
+			panorama = map.getStreetView();
+			panorama.setPosition(place.geometry.location);
+			panorama.setPov(/** @type {google.maps.StreetViewPov} */({
+			heading: 265,
+			pitch: 0
+			}));
+			panorama.setVisible(false);
+
+			directionsDisplay.setMap(null);
+	  		directionsDisplay.setPanel(null);
+	    };
+
+	    function setReviewsContent(reviews){
+	    	var text = "";
+	    	for(var i = 0; i < reviews.length; i++){
+	    		var time = new Date(reviews[i].time*1000);
+	    		var month = time.getMonth()+1 > 9 ? time.getMonth()+1 : "0"+(time.getMonth()+1);
+	    		var date = time.getFullYear()+"-"+month+"-"+time.getDate()+" "+time.getHours()+":"+time.getMinutes()+":"+time.getSeconds();
+ 	    		text += "<div class='media col-md-12 mb-2' style='border:1px solid #dcdcdc;border-radius:5px;'><div class='media-left media-top mt-3 mb-3'><a href='"+reviews[i].author_url+"' target='_blank'><img src='"+reviews[i].profile_photo_url+"' class='media-object' style='width:60px'></a></div><div class='media-body mt-3 mb-3 ml-3'><h5 class='media-heading'><a href='"+reviews[i].author_url+"' target='_blank'>"+reviews[i].author_name+"</a></h5><div class='row ml-1'><div class='stars-container' id='rate_time"+i+"'>★★★★★</div><div> "+date+"</div></div><div>"+reviews[i].text+"</div></div></div>";
+	    	}
+	    	$("#reviewsContent").html(text);
+	    	for(var i =0; i < reviews.length; i++){
+	    		var setwidth = 0;
+	    		if(reviews[i].rating != null && reviews[i].rating >= 0){
+	    			setwidth = reviews[i].rating/5*fullWidth;
+	    		}
+	    		$("#rate_time"+i).width(setwidth + "px");
+	    	}
+	    };
+
+	    function yelpGenerateReviews(reviews){
+	    	var text = "";
+	    	for(var i = 0; i < reviews.length; i++){
+	    		var date = reviews[i].time_created;
+ 	    		text += "<div class='media col-md-12 mb-2' style='border:1px solid #dcdcdc;border-radius:5px;'><div class='media-left media-top mt-3 mb-3'><a href='"+reviews[i].url+"' target='_blank'><img src='"+reviews[i].user.image_url+"' class='media-object' style='width:60px'></a></div><div class='media-body mt-3 mb-3 ml-3'><h5 class='media-heading'><a href='"+reviews[i].url+"' target='_blank'>"+reviews[i].user.name+"</a></h5><div class='row ml-1'><div class='stars-container' id='rate_yelp"+i+"'>★★★★★</div><div> "+date+"</div></div><div>"+reviews[i].text+"</div></div></div>";
+	    	}
+	    	$("#yelpReviewsContent").html(text);
+	    	for(var i =0; i < reviews.length; i++){
+	    		var setwidth = 0;
+	    		if(reviews[i].rating != null && reviews[i].rating >= 0){
+	    			setwidth = reviews[i].rating/5*fullWidth;
+	    		}
+	    		$("#rate_yelp"+i).width(setwidth + "px");
+	    	}
+	    };
+
+	    function updateFavorites(){
+	    	var myOrder = JSON.parse(localStorage.getItem("order"));
+	    	if(myOrder.length > 0){
+	    		var text = "";
+	    		text+="<thead><tr><th scope='col'>#</th><th scope='col'>Category</th><th scope='col'>Name</th><th scope='col'>Address</th><th scope='col'>Favorite</th><th scope='col'>Details</th></tr></thead><tbody>";
+	    		for(var i=0;i<myOrder.length;i++){
+	    			var obj = JSON.parse(localStorage.getItem(myOrder[i]));
+					text+="<tr><th scope='row'>"+(i+1)+"</th><td><img style='width:40px' src='"+obj["icon"]+"'></img>"+"</td><td>"+obj["name"]+"</td><td>"+obj["vicinity"]+"</td><td name='"+obj["place_id"]+"'><button type='button' class='btn btn-light' onclick='deleteFavoritesButton(this)'><span class='fa fa-trash'></span></button></td><td><button type='button' class='btn btn-light' onclick='triggerDetailButtonInFavor(this)'><span class='fa fa-chevron-right'></span></button></td></tr>";
+	    		}
+	    		text+="</tbody>";
+	    		$("#third").html(text);
+	    		$("#favor_detail").css("display","inline");
+	    		$("#favor_detail").prop("disabled",true);
+	    		$("#nofavorites").html("");
+	    		if(place_id.length > 0){
+	    			$("#favor_detail").prop("disabled",false);
+	    			if($("td[name='"+place_id+"']").length > 0){
+	    				$("td[name='"+place_id+"']").parent().css("background-color","#ffcc66");
+	    			}
+	    		}
+	    	}
+	    	else{
+	    		$("#favor_detail").css("display","none");
+	    		$("#nofavorites").html("<div class='alert alert-warning col-md-12' role='alert'>No records.</div>");
+	    		$("#third").html("");
+	    	}
+	    };
+	</script>
+</head>
+<body>
+<table id="first" class="col-md-9">
+<tr><th>
+	<div class="row">
+		<div class="col-md-4"></div>
+		<div align="center"><h4>Travel and Entertainment Search</h4></div>
+	</div>
+</th></tr>
+<tr><td>
+	<form method="POST" id="form" action="http://csci571-placesearch-env.us-east-2.elasticbeanstalk.com/place_back.php">
+		<div class="form-group required row">
+			<div class="col-md-2"></div>
+			<label for="keyword" class="col-md-2 col-form-label">Keyword</label>
+			<div class="col-md-6" style="display: inline-block;">
+				<input type="text" class="form-control col-md-12" id="keyword" name="keyword">
+				<span id="keywordMessage" style="display: none;" class="help-block">Please enter a keyword.</span>
+			</div>
+		</div>
+		<div class="form-group row">
+			<div class="col-md-2"></div>
+			<label for="category" class="col-md-2 col-form-label">Category</label>
+			<div class="col-md-4">
+				<select id="category" name="category" class="form-control col-md-12">
+					<option value="default" selected>Default</option>
+					<option value="airport">Airport</option>
+					<option value="amusement_park">Amusement Park</option>
+					<option value="aquarium">Aquarium</option>
+					<option value="art_gallery">Art Gallery</option>
+					<option value="bakery">Bakery</option>
+					<option value="bar">Bar</option>
+					<option value="beauty_salon">Beauty Salon</option>
+					<option value="bowling_alley">Bowling Alley</option>
+					<option value="bus_station">Bus Station</option>
+					<option value="cafe">Cafe</option>
+					<option value="campground">Campground</option>
+					<option value="car_rental">Car Rental</option>
+					<option value="casino">Casino</option>
+					<option value="lodging">Lodging</option>
+					<option value="movie_theater">Movie Theater</option>
+					<option value="museum">Museum</option>
+					<option value="night_club">Night Club</option>
+					<option value="park">Park</option>
+					<option value="parking">Parking</option>
+					<option value="restaurant">Restaurant</option>
+					<option value="shopping_mall">Shopping Mall</option>
+					<option value="stadium">Stadium</option>
+					<option value="subway_station">Subway Station</option>
+					<option value="taxi_stand">Taxi Stand</option>
+					<option value="train_station">Train Station</option>
+					<option value="transit_station">Transit Station</option>
+					<option value="travel_agency">Travel Agency</option>
+					<option value="zoo">Zoo</option>
+				</select>
+			</div>
+		</div>
+		<div class="form-group row">
+			<div class="col-md-2"></div>
+			<label for="distance" class="col-md-2 col-form-label">Distance(miles)</label>
+			<div class="col-md-4">
+				<input type="text" class="form-control col-md-12" id="distance" name="distance" placeholder="10">
+			</div>
+		</div>
+		<fieldset class="form-group">
+		    <div class="form-group required row">
+		      	<div class="col-md-2"></div>
+		      	<legend class="col-form-label col-md-2 pt-0">From</legend>
+		      	<div class="col-md-8">
+	        		<div class="form-check">
+		          		<input class="form-check-input" type="radio" name="place" id="here" value="here" checked>
+		          		<label class="form-check-label" for="here">Current location</label>
+        			</div>
+        			<div class="form-check">
+		          		<input class="form-check-input" type="radio" name="place" id="other_place" value="other_place">
+		          		<label class="form-check-label" for="other_place">Other. Please specify:</label>
+		          		<input type="text" class="form-control col-md-9" id="location_custom" name="location_custom" placeholder="Enter a location" disabled>
+		          		<span id="locationMessage" style="display: none;" class="help-block">Please enter a location.</span>
+        			</div>
+		      	</div>
+		    </div>
+		</fieldset>
+		<div class="form-group row mb-5">
+			<div class="col-md-2"></div>
+			<button type="submit" name="search" id="search" class="btn btn-primary ml-3" disabled><span class="fa fa-search"></span> Search</button>
+			<button type="button" id="clear" class="btn btn-light ml-1">Clear</button>
+		</div>
+		<input type="hidden" name="json_string" id="json_string" value="">
+</form></td></tr>
+</table>
+
+<ul class="nav nav-pills mb-5 d-flex justify-content-center" id="pills-tab" role="tablist">
+  <li class="nav-item">
+    <a class="nav-link active" id="results" data-toggle="pill" href="#pills_results" role="tab" aria-controls="pills_results" aria-selected="true">Results</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="favorites" data-toggle="pill" href="#pills_favorites" role="tab" aria-controls="pills_favorites" aria-selected="false">Favorites</a>
+  </li>
+</ul>
+
+<div class="progress" style="width: 80%;margin: auto;visibility:hidden;" id="progressBar">
+	<div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" style="width: 50%"></div>
+</div>
+
+<div ng-app="ngAnimate" ng-init="checked=true;faded=true">
+	<div class="tab-content container animate-show" id="searchPage" ng-show="checked">
+	  	<div class="tab-pane fade show active" id="pills_results" role="tabpanel" aria-labelledby="pills_results_tab">
+	  		<div class="text-right"><button style="display: none;" type="button" id="details" class="btn btn-light mb-2" ng-click="checked=false" disabled>Details<span class='fa fa-chevron-right'></span></button></div>
+		  	<table id="second" class="table table-hover"></table>
+		  	<div id="norecords"></div>
+		  	<div class="text-center">
+		  		<button type="button" style="visibility:hidden;" class="btn btn-light mb-5" id="previous">Previous</button> <button type="button" style="visibility:hidden;" class="btn btn-light ml-2 mb-5" id="next">Next</button>
+		  	</div>
+	  	</div>
+		<div class="tab-pane fade" id="pills_favorites" role="tabpanel" aria-labelledby="pills_favorites_tab">
+	  		<div class="text-right"><button style="display: none;" type="button" id="favor_detail" class="btn btn-light mb-2" ng-click="checked=false" disabled>Details<span class='fa fa-chevron-right'></span></button></div>
+		  	<table id="third" class="table table-hover"></table>
+		  	<div id="nofavorites"></div>
+		  	<div class="text-center">
+		  		<button type="button" style="visibility:hidden;" class="btn btn-light mb-5" id="previousFavor">Previous</button> <button type="button" style="visibility:hidden;" class="btn btn-light ml-2 mb-5" id="nextFavor">Next</button>
+		  	</div>			
+		</div>
+	</div>
+
+	<div id="detailsPage" class="animate-show container" ng-hide="checked">
+		<div style="font-size:20px;font-weight: bold;" class="text-center" id="place_name"></div>
+		<div class="col-md-12 row">
+			<div class="col-md-6 text-left"><button type="button" id="list" class="btn btn-light mb-2" ng-click="checked=true"><span class='fa fa-chevron-left'></span> List</button></div>
+			<div class="col-md-6 text-right"><button type="button" class="btn btn-light" id="favorButton"><span class='fa fa-star-o'></span></button><button type="button" class="btn btn-light ml-2" style="width: 40px;height:40px;background-image:url(http://cs-server.usc.edu:45678/hw/hw8/images/Twitter.png);background-size: 38px 38px;"></button></div>
+		</div>
+
+		<ul class="nav nav-tabs d-flex justify-content-end" id="detailTab" role="tablist">
+			<li class="nav-item">
+				<a class="nav-link active" id="info-tab" data-toggle="tab" href="#info" role="tab" aria-controls="info" aria-selected="true">Info</a>
+			</li>
+			<li class="nav-item">
+				<a class="nav-link" id="photos-tab" data-toggle="tab" href="#photos" role="tab" aria-controls="photos" aria-selected="false">Photos</a>
+			</li>
+			<li class="nav-item">
+				<a class="nav-link" id="maps-tab" data-toggle="tab" href="#maps" role="tab" aria-controls="maps" aria-selected="false">Map</a>
+			</li>
+			<li class="nav-item">
+				<a class="nav-link" id="reviews-tab" data-toggle="tab" href="#reviews" role="tab" aria-controls="reviews" aria-selected="false">Reviews</a>
+			</li>
+		</ul>
+		<div class="tab-content" id="myTabContent">
+			<div class="tab-pane fade show active" id="info" role="tabpanel" aria-labelledby="info-tab">
+				<table id="infoTable" class="table table-striped mt-4 mb-5"></table>
+				<div class="modal fade" id="openHoursModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+					<div class="modal-dialog" role="document">
+						<div class="modal-content">
+							<div class="modal-header">
+								<h5 class="modal-title" id="modalLabel">Open hours</h5>
+								<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+									<span aria-hidden="true">&times;</span>
+								</button>
+							</div>
+							<div class="modal-body">
+								<table class="table" id="forth"></table>
+							</div>
+							<div class="modal-footer">
+								<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="tab-pane fade" id="photos" role="tabpanel" aria-labelledby="photos-tab">
+				<div class="row col-md-12 mt-4">
+					<div class="col-md-3" id="firstCol">
+					</div>
+					<div class="col-md-3" id="secondCol">
+					</div>
+					<div class="col-md-3" id="thirdCol"> 
+					</div>
+					<div class="col-md-3" id="forthCol">
+					</div>
+				</div>
+				<div id="photoWarning"></div>
+			</div>
+			<div class="tab-pane fade" id="maps" role="tabpanel" aria-labelledby="maps-tab">
+				<form>
+					<div class="form-row">
+							    <div class="form-group col-md-4">
+									<label for="fromPlace">From</label>
+									<input type="text" class="form-control" id="fromPlace" value="">
+							    </div>
+							    <div class="form-group col-md-4">
+									<label for="toPlace">From</label>
+									<input type="text" class="form-control" id="toPlace" value="" readonly>
+							    </div>
+							    <div class="form-group col-md-2">
+									<label for="travelMode">Travel Mode</label>
+									<select id="travelMode" class="form-control col-md-12">
+										<option value="driving" selected>Driving</option>
+										<option value="bicycling">Bicycling</option>
+										<option value="transit">Transit</option>
+										<option value="walking">Walking</option>
+									</select>
+							    </div>
+							    <div class="col-md-2 text-center">
+							    	<label for="directions" style="visibility: hidden;">Direction</label>
+							    	<button type="button" class="btn btn-primary" id="directions" disabled>Get Directions</button>
+								</div>
+					</div>
+				</form>
+				<button type="button" id="streetView" class="btn btn-light" style="width: 40px;height:40px;background-image:url(http://cs-server.usc.edu:45678/hw/hw8/images/Pegman.png);background-size: 37px 37px;background-repeat: no-repeat;" value="off"></button>
+				<div class="col-md-12 mt-3" style="height: 500px" id="map"></div>
+				<div class="mb-3" id="pannel"></div>
+				<div class="mt-5"></div>
+			</div>
+			<div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
+				<div class="row mt-4 mb-4">
+					<div class="dropdown show ml-2">
+						<a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="dropdownReviews" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							Google Reviews
+						</a>
+						<div class="dropdown-menu" aria-labelledby="dropdownReviews">
+							<a class="dropdown-item" href="javascript:void(0)" id="googleReviews" ng-click="faded=true">Google Reviews</a>
+							<a class="dropdown-item" href="javascript:void(0)" id="yelpReviews" ng-click="faded=false">Yelp Reviews</a>
+						</div>
+					</div>
+
+					<div class="dropdown show ml-3">
+						<a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="dropdownOrder" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							Default Order
+						</a>
+						<div class="dropdown-menu" aria-labelledby="dropdownOrder">
+							<a class="dropdown-item" href="javascript:void(0)" id="defaultOrder">Default Order</a>
+							<a class="dropdown-item" href="javascript:void(0)" id="highest">Highest Rating</a>
+							<a class="dropdown-item" href="javascript:void(0)" id="lowest">Lowest Rating</a>
+							<a class="dropdown-item" href="javascript:void(0)" id="mostRecent">Most Rencent</a>
+							<a class="dropdown-item" href="javascript:void(0)" id="leastRecent">Least Recent</a>
+						</div>
+					</div>
+				</div>
+				<div id="reviewsContent" ng-show="faded" class="animationIf"></div>
+				<div id="yelpReviewsContent" ng-hide="faded" class="animationIf"></div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+	$("#search").click(function(){
+		$("#second").html("");
+		$("#norecords").html("");
+		$("#progressBar").css("visibility","visible");
+		pageIndex = 0;
+		curPages = new Object();
+		prePages = new Object();
+		next_page = "";
+		$("#previous").css("visibility","hidden");
+		$("#next").css("visibility","hidden");
+		$("#details").css("display","none");
+		place_id = "";
+		myList = new Object();
+		$("#details").prop("disabled",true);
+		$("#directions").prop("disabled",true);
+		$("#travelMode").val("driving");
+		fullWidth = 0;
+		curItems = "";
+		previousTab = "";
+		globalReviews = "";
+		globalYelpReviews = "";
+		if(localStorage.getItem("order") === null){
+			localStorage.setItem("order", JSON.stringify([]));
+		}
+		$("#list").click();
+	});
+	$("#form").submit(function(e) {
+	    e.preventDefault();
+	    var inputData = $("#form").serialize();
+	    var actionurl = e.currentTarget.action;
+	    $.ajax({
+	            url: actionurl,
+	            type: 'POST',
+	            data: inputData,
+	            success: function(response) {
+	            	//console.log(response);
+	                var jsonObj=JSON.parse(response);
+	                generateTable(jsonObj);
+	            },
+	            error: function (response) {
+	            	$("#norecords").html("<div class='alert alert-danger col-md-12' role='alert'>Failed to get search results.</div>");
+	                console.log('An error occurred.');
+	                //console.log(response);
+	            }
+	    });
+	});
+	$('input[type=radio][name=place]').change(function() {
+        if (this.value == 'here') {
+        	$("#location_custom").removeClass("is-invalid");
+            $("#location_custom").prop("disabled",true);
+            $("#locationMessage").css("display","none");
+        }
+        else if (this.value == 'other_place') {
+            $("#location_custom").prop("disabled",false);
+        }
+    });
+    $("#clear").click(function(){
+    	$("#keyword").val("");
+    	$("#category").val("default");
+    	$("#distance").val("");
+    	$("#location_custom").val("");
+    	$("#location_custom").removeClass("is-invalid");
+        $("#locationMessage").css("display","none");
+    	$("#location_custom").prop("disabled",true);
+    	$("#here").prop("checked",true);
+    	$("#keyword").removeClass("is-invalid");
+        $("#keywordMessage").css("display","none");
+        $("#search").prop("disabled",true);
+        $("#second").html("");
+        $("#norecords").html("");
+        $("#next").css("visibility","hidden");
+        $("#previous").css("visibility","hidden");
+        $("#details").css("display","none");
+        $("#progressBar").css("visibility","hidden");
+        $("#list").click();
+    });
+
+    $("#keyword").bind("keyup focusout",function(){
+    	var string = this.value;
+    	var num = string.split(" ").length-1;
+    	if(string.length == 0 || num == string.length){
+    		$("#keywordMessage").css("display","inline");
+    		$("#keyword").addClass("is-invalid");
+    		$("#search").prop("disabled",true);
+    	}
+    	else{
+    		$("#keywordMessage").css("display","none");
+    		$("#keyword").removeClass("is-invalid");
+    		if(geoEnable == true && $("#locationMessage").css("display")=="none"){
+				var place = $('input[type=radio][name=place]').val();
+				if(place=="other_place" && $("#location_custom").val().length > 0 || place=="here"){
+					$("#search").prop("disabled",false);
+				}
+    		}
+    	}
+    });
+
+    $("#location_custom").bind("keyup focusout",function(){
+    	var string = this.value;
+    	var num = string.split(" ").length-1;
+    	if(string.length == 0 || num == string.length){
+    		$("#locationMessage").css("display","inline");
+    		$("#location_custom").addClass("is-invalid");
+    		$("#search").prop("disabled",true);
+    	}
+    	else{
+    		$("#locationMessage").css("display","none");
+    		$("#location_custom").removeClass("is-invalid");
+    		if(geoEnable == true){
+    			if($("#keywordMessage").css("display")=="none" && $("#keyword").val().length > 0){
+    				$("#search").prop("disabled",false);
+    			}
+    		}
+    	}
+    });
+    $("#next").click(function(){
+    	pageIndex += 1;
+    	window.setTimeout(function(){
+    		$.ajax({
+	            url: "http://csci571-placesearch-env.us-east-2.elasticbeanstalk.com/place_back.php",
+	            type: 'POST',
+	            data: "next_page="+next_page,
+	            async:false,
+	            success: function(response) {
+	                var jsonObj=JSON.parse(response);
+	                generateTable(jsonObj);
+	            },
+	            error: function (response) {
+	                console.log('An error occurred.');
+	                console.log(response);
+	            }
+	    	});
+	    },1000);
+    });
+
+    $("#previous").click(function(){
+    	pageIndex -= 1;
+    	$("#norecords").html("");
+    	$("#second").html(curPages[pageIndex]);
+    	next_page = prePages[pageIndex];
+    	if(pageIndex == 0){
+    		$("#previous").css("visibility","hidden");
+    	}
+    	$("#next").css("visibility","visible");
+    	var myOrder = JSON.parse(localStorage.getItem("order"));
+    	for(var i=0;i<myOrder.length;i++){
+    		if($("th[name='"+myOrder[i]+"']").length > 0){
+    			$("th[name='"+myOrder[i]+"']").parent().find("td:eq(3)").find("button").find("span").attr("class","fa fa-star");
+    		}
+    	}
+    });
+
+    $("#details").click(function(){
+       	var starClass = localStorage.getItem(place_id) === null ? "fa fa-star-o" : "fa fa-star";
+    	$("#favorButton").find("span").attr("class",starClass);
+
+    	if(place_id != curItems){
+		    var service = new google.maps.places.PlacesService(map);
+		  	service.getDetails({
+		   		placeId: place_id
+		  	}, function(place, status) {
+			    if (status === google.maps.places.PlacesServiceStatus.OK) {
+			        $("#place_name").html(place.name);			    	
+			        generateInfoTable(place);
+			        generatePhotosContent(place);
+			        setMapsContent(place);
+			        if(place.reviews != undefined && place.reviews.length > 0){
+			        	$("#dropdownReviews").html("Google Reviews");
+			        	$("#dropdownOrder").html("Default Order");
+			        	globalReviews = place.reviews;
+			        	setReviewsContent(place.reviews);
+			    	}
+			    	else{
+			    		globalReviews = "";
+			    		$("#reviewsContent").html("<div class='alert alert-warning' role='alert'>No records.</div>");
+			    	}
+			    	var city = "";
+			    	var state = "";
+			    	var country = "";
+			    	var zip = "";
+			    	for(var k=0;k<place.address_components.length;k++){
+			    		if(place.address_components[k].types[0] == "locality"){
+			    			city = place.address_components[k].long_name;
+			    		}
+			    		if(place.address_components[k].types[0] == "administrative_area_level_1"){
+			    			state = place.address_components[k].short_name;
+			    		}
+			    		if(place.address_components[k].types[0] == "country"){
+			    			country = place.address_components[k].short_name;
+			    		}
+			    		if(place.address_components[k].types[0] == "postal_code"){
+			    			zip = place.address_components[k].short_name;
+			    		}			    		
+			    	}
+					$.ajax({
+			            url: "http://csci571-placesearch-env.us-east-2.elasticbeanstalk.com/place_back.php",
+			            type: 'POST',
+			            data: "name="+place.name+"&address1="+place.formatted_address+"&city="+city+"&state="+state+"&country="+country+"&zip="+zip,
+			            success: function(response) {
+			                var jsonObj=JSON.parse(response);
+			                if(jsonObj.businesses == undefined && jsonObj.reviews.length > 0){
+			                	yelpGenerateReviews(jsonObj.reviews);
+			                	globalYelpReviews = jsonObj.reviews;
+			                }
+			                else{
+			                	$("#yelpReviewsContent").html("<div class='alert alert-warning' role='alert'>No records.</div>");
+			                	globalYelpReviews = "";
+			                }
+			            },
+			            error: function (response) {
+			                console.log('An error occurred.');
+			                console.log(response);
+			            }
+			    	});
+				}
+		  	});
+		  	curItems = place_id;
+	  	}
+	  	else{
+	  		$("#"+previousTab).tab("show");
+	  	}
+    });
+
+    $("#list").click(function(){
+    	previousTab = $("#myTabContent").find(".active").attr("aria-labelledby");
+    	$("#info-tab").tab("show");
+    	updateFavorites();
+    	/*var myOrder = JSON.parse(localStorage.getItem("order"));
+    	for(var i=0;i<myOrder.length;i++){
+    		if($("th[name='"+myOrder[i]+"']").length > 0){
+    			$("th[name='"+myOrder[i]+"']").parent().find("td:eq(3)").find("button").find("span").attr("class","fa fa-star");
+    		}
+    	}*/
+    });
+
+    $("#fromPlace").bind("keyup focusout",function(){
+    	var string = this.value;
+    	var num = string.split(" ").length-1;
+    	if(string.length == 0 || num == string.length){
+    		$("#directions").prop("disabled",true);
+    	}
+    	else{
+			$("#directions").prop("disabled",false);
+    	}
+    });
+
+    $("#streetView").click(function(){
+    	var currentView = $(this).val();
+    	if(currentView == "off"){
+    		$(this).css("background-image","url(http://cs-server.usc.edu:45678/hw/hw8/images/Map.png)");
+    		$(this).val("on");
+    		panorama.setVisible(true);
+    	}
+    	else{
+    		$(this).css("background-image","url(http://cs-server.usc.edu:45678/hw/hw8/images/Pegman.png)");
+    		$(this).val("off");
+    		panorama.setVisible(false);
+    	}
+    });
+
+    $("#directions").click(function(){
+    	marker.setMap(null);
+    	var origin = $("#fromPlace").val() == "Your location" ? originAddress : $("#fromPlace").val();
+		var request = {
+			origin: origin,
+			destination: $("#toPlace").val(),
+			travelMode: $("#travelMode").val().toUpperCase(),
+			provideRouteAlternatives: true
+		};
+		directionsService.route(request, function(response, status) {
+			if (status == 'OK') {
+				directionsDisplay.setMap(map);
+	  			directionsDisplay.setPanel(document.getElementById('pannel'));
+				directionsDisplay.setDirections(response);
+			}
+		});
+    });
+
+    $("#googleReviews").click(function(){
+    	$("#dropdownReviews").html(this.innerHTML);
+
+    });
+    $("#yelpReviews").click(function(){
+    	$("#dropdownReviews").html(this.innerHTML);
+    });
+
+    $("#defaultOrder").click(function(){
+    	$("#dropdownOrder").html(this.innerHTML);
+    	if(globalReviews.length > 0){
+    		setReviewsContent(globalReviews);
+    	}
+    	if(globalYelpReviews.length > 0){
+    		yelpGenerateReviews(globalYelpReviews);
+    	}
+    });
+    $("#highest").click(function(){
+    	$("#dropdownOrder").html(this.innerHTML);
+    	if(globalReviews.length > 0){
+    		var reviewsSort = globalReviews.slice();
+    		reviewsSort.sort(function(a,b){
+    			return b.rating-a.rating;
+    		});
+    		setReviewsContent(reviewsSort);
+    	}
+    	if(globalYelpReviews.length > 0){
+    		var reviewsSort = globalYelpReviews.slice();
+    		reviewsSort.sort(function(a,b){
+    			return b.rating-a.rating;
+    		});
+    		yelpGenerateReviews(reviewsSort);
+    	}
+    });
+    $("#lowest").click(function(){
+    	$("#dropdownOrder").html(this.innerHTML);
+    	if(globalReviews.length > 0){
+    		var reviewsSort = globalReviews.slice();
+    		reviewsSort.sort(function(a,b){
+    			return a.rating-b.rating;
+    		});
+    		setReviewsContent(reviewsSort);
+    	}
+    	if(globalYelpReviews.length > 0){
+    		var reviewsSort = globalYelpReviews.slice();
+    		reviewsSort.sort(function(a,b){
+    			return a.rating-b.rating;
+    		});
+    		yelpGenerateReviews(reviewsSort);
+    	}
+    });
+    $("#mostRecent").click(function(){
+    	$("#dropdownOrder").html(this.innerHTML);
+    	if(globalReviews.length > 0){
+    		var reviewsSort = globalReviews.slice();
+    		reviewsSort.sort(function(a,b){
+    			return b.time-a.time;
+    		});
+    		setReviewsContent(reviewsSort);
+    	}
+    	if(globalYelpReviews.length > 0){
+    		var reviewsSort = globalYelpReviews.slice();
+    		reviewsSort.sort(function(a,b){
+    			var aArray = a.time_created.split(/[\s:-]+/);
+    			var bArray = b.time_created.split(/[\s:-]+/);
+    			var aTime = "";
+    			for(var i=0;i<aArray.length;i++){
+    				aTime += aArray[i];
+    			}
+    			aTime = parseInt(aTime);
+    			var bTime = "";
+    			for(var i=0;i<bArray.length;i++){
+    				bTime += bArray[i];
+    			}
+    			bTime = parseInt(bTime);
+    			return bTime-aTime;
+    		});
+    		yelpGenerateReviews(reviewsSort);
+    	}
+    });
+    $("#leastRecent").click(function(){
+    	$("#dropdownOrder").html(this.innerHTML);
+    	if(globalReviews.length > 0){
+    		var reviewsSort = globalReviews.slice();
+    		reviewsSort.sort(function(a,b){
+    			return a.time-b.time;
+    		});
+    		setReviewsContent(reviewsSort);
+    	}
+    	if(globalYelpReviews.length > 0){
+    		var reviewsSort = globalYelpReviews.slice();
+    		reviewsSort.sort(function(a,b){
+    			var aArray = a.time_created.split(/[\s:-]+/);
+    			var bArray = b.time_created.split(/[\s:-]+/);
+    			var aTime = "";
+    			for(var i=0;i<aArray.length;i++){
+    				aTime += aArray[i];
+    			}
+    			aTime = parseInt(aTime);
+    			var bTime = "";
+    			for(var i=0;i<bArray.length;i++){
+    				bTime += bArray[i];
+    			}
+    			bTime = parseInt(bTime);
+    			return aTime-bTime;
+    		});
+    		yelpGenerateReviews(reviewsSort);
+    	}
+    });
+
+    $("#favorites").click(function(){
+    	updateFavorites();
+    });
+
+    $("#favorButton").click(function(){
+   		var star = $(this).find("span").attr("class");
+   		if(star == "fa fa-star-o"){
+   			$(this).find("span").attr("class","fa fa-star");
+   			var myOrder = JSON.parse(localStorage.getItem("order"));
+   			myOrder.push(place_id);
+   			localStorage.setItem("order",JSON.stringify(myOrder));
+   			localStorage.setItem(place_id,JSON.stringify(myList[place_id]));
+   			$("th[name="+place_id+"]").parent().find("td:eq(3)").find("button").find("span").attr("class","fa fa-star");
+   		}
+   		else{
+   			$(this).find("span").attr("class","fa fa-star-o");
+   			var myOrder = JSON.parse(localStorage.getItem("order"));
+   			for(var i=0;i<myOrder.length;i++){
+   				if(myOrder[i]==place_id){
+   					myOrder.splice(i, 1);
+   					break;
+   				}
+   			}
+   			localStorage.setItem("order",JSON.stringify(myOrder));
+   			localStorage.removeItem(place_id);
+   			$("th[name="+place_id+"]").parent().find("td:eq(3)").find("button").find("span").attr("class","fa fa-star-o");
+   		}
+    });
+
+    $("#favor_detail").click(function(){
+    	$("#details").click();
+    });
+
+
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBBVXWQdM85XFrhNJNMS4qc-lKdoBDieMk&libraries=places&callback=initMap" async defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</body>
+</html>
+
