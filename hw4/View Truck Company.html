@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
+<title>View Truck Company</title>
+<script type="text/javascript">
+	var jsonObj;
+	function generateHTML(jsonObj){
+		root=jsonObj.DocumentElement;
+		header=jsonObj.Mainline.Table.Header.Data;
+		if(header.length!=6){
+			html_text="";
+			alert("The number of Header data values is not 6!");
+			return;
+		}
+		if(!jsonObj.Mainline.Table.Row || jsonObj.Mainline.Table.Row.length == 0){
+			html_text="";
+			alert("JSON file contains no trucking company entries!");
+			return;
+		}
+		html_text="<html><head><title>Top Trucking Companies</title></head><body>";
+		html_text+="<table border='2'>";
+		truckings=jsonObj.Mainline.Table.Row;
+		html_text+="<tbody>";
+		html_text+="<tr>"; 
+		x=300; y=150;
+		for(i=0;i<header.length;i++){
+			html_text+="<th>"+header[i]+"</th>";
+		}
+		html_text+="</tr>";
+		// output out the values
+		for(i=0;i<truckings.length;i++)
+		{
+			truckingNodeList=truckings[i];
+			html_text+="<tr>"; //start a new row of the output table
+			var trucking_keys = Object.keys(truckingNodeList); 
+			for(j=0;j<trucking_keys.length;j++)
+			{
+				prop = trucking_keys[j]; 
+				if(trucking_keys[j]=="Logo"){//handle images separately
+					if(truckingNodeList[prop]&&truckingNodeList[prop]!="")
+						html_text+="<td><img src='"+ truckingNodeList[prop] +"' width='"+x+"px' height='"+y+"px'></td>"; 
+					else
+						html_text+="<td></td>";
+				} 
+				else if(trucking_keys[j]=="Hubs"){
+					hub=truckingNodeList[prop].Hub;
+					html_text+="<td>";
+					if(hub!=null&&hub.length > 0){
+						html_text+="<ul>";
+						for(k=0;k<hub.length;k++){
+							if(k == 0) html_text+="<li><b>"+hub[k]+"</b></li>";
+							else html_text+="<li>"+hub[k]+"</li>";
+						}
+						html_text+="</ul>";
+					}
+					html_text+="</td>";
+
+				}
+				else if(trucking_keys[j]=="HomePage"){
+					if(truckingNodeList[prop]&&truckingNodeList[prop]!="")
+						html_text+="<td><a href='"+truckingNodeList[prop]+"'>"+truckingNodeList[prop]+"</a></td>";
+					else
+						html_text+="<td></td>";
+				}
+				else {
+					if(truckingNodeList[prop]&&truckingNodeList[prop]!="")
+						html_text+="<td>"+ truckingNodeList[prop] +"</td>";
+					else
+						html_text+="<td></td>";
+				} 
+			}
+			html_text+="</tr>"; 
+		}
+		html_text+="</tbody>"; 
+		html_text+="</table>";
+		html_text+="</body></html>";
+	}
+function viewJSON(what){ 
+	var URL = what.URL.value;
+	function loadJSON(url) {
+		if (window.XMLHttpRequest){// code for IE7+, Firefox, Chrome, Opera, Safari
+			xmlhttp=new XMLHttpRequest(); 
+		} 
+		else {// code for IE6, IE5
+			xmlhttp=new ActiveXObject("Microsoft.XMLHTTP"); 
+		} 
+		xmlhttp.open("GET",url,false);
+		try{
+			xmlhttp.send();
+			jsonObj= JSON.parse(xmlhttp.responseText);
+		}catch(e){
+			alert("The valid JSON file does not exist!");
+			return;
+		}
+		return jsonObj;
+	}
+	jsonObj = loadJSON(URL);
+	if(!jsonObj) return;
+	if (window.ActiveXObject) //if IE, simply execute script (due to async prop). 
+	{ 
+		if (jsonObj.parseError.errorCode != 0) {
+			var myErr = jsonObj.parseError;
+			generateError(jsonObj);
+			hWin = window.open("", "Error", "height=300,width=340"); hWin.document.write(html_text);
+		} else { 
+			generateHTML(jsonObj);
+			if(html_text=="") return;
+			hWin = window.open("", "Assignment4", "height=800,width=600"); hWin.document.write(html_text); 
+		}
+	} else //else if FF, execute script once JSON object has loaded 
+	{ 
+		jsonObj.onload=generateHTML(jsonObj);
+		if(html_text=="") return;
+		hWin = window.open("", "Assignment4", "height=700,width=1200"); hWin.document.write(html_text); 
+	} 
+	hWin.document.close(); 
+}
+</script>
+</head>
+<body>
+<h1 style="margin-left:400px;margin-top:150px;font-size: 25px">Enter URL for Trucking List JSON File</h1>
+<form  name="myform" method="POST" id="location">
+<input style="margin-left: 500px" type="text" name="URL" maxlength="50" size="30" value="truckinglist.json" />
+<br />
+<input style="margin-left: 565px;margin-top: 15px" type="button" name="submit" value="Submit Query" onclick="viewJSON(this.form)" />
+</form>
+</body>
+</html>

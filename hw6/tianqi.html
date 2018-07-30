@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<?php 
+$ip=$_SERVER['REMOTE_ADDR'];
+$localGeo=file_get_contents("http://ip-api.com/json/".$ip);
+?>
+<?php
+if(isset($localGeo)):
+?>
+<script type="text/javascript">
+	document.getElementById("search").disabled=false;
+</script>
+<?php endif;?>
+
+<?php
+if(isset($_POST["search"])): 
+?>
+<h3>the search button clicked!</h3>
+<?php endif; ?>
+
+<html>
+<head><title>Travel and Entertainment Search</title>
+	<style>
+		table{
+			border-collapse: collapse;
+			border: 3px solid #ddd;
+			background-color: #f2f2f2;
+			width: 700px;
+			position: relative;
+			left:200px;
+			top:100px;
+		}
+		th{
+			font-size: 35px;
+			border-bottom: 3px solid #ddd;
+			height:40px;
+		}
+		td{
+			height:150px;
+			line-height: 160%;
+		}
+	</style>
+	<script type="text/javascript">
+		function clearAll(){
+			document.getElementById("keyword").value="";
+			document.getElementById("category").value="default";
+			document.getElementById("distance").value="";
+			document.getElementById("location_custom").value="";
+			document.getElementById("here").checked=true;
+		}
+		function radioChange(){
+			var x = document.getElementById("here");
+			if(x.checked == true){
+				document.getElementById("location_custom").disabled=true;
+			}
+			else{
+				document.getElementById("location_custom").disabled=false;
+			}
+		}
+	</script>
+</head>
+<body>
+<table border="">
+<tr><th><i>Travel and Entertainment Search</i></th></tr>
+<tr><td><form method="POST">
+<b>Keyword</b><input type="text" name="keyword" id="keyword" value="<?php echo isset($_POST["keyword"]) ? $_POST["keyword"] : "" ?>" required><br>
+<b>Category</b>
+<select name="category" id="category">
+	<option value="default">default</option>
+	<option value="cafe">cafe</option>
+	<option value="bakery">bakery</option>
+	<option value="restaurant">restaurant</option>
+	<option value="beauty">beauty salon</option>
+	<option value="casino">casino</option>
+	<option value="movie">movie theater</option>
+	<option value="lodging">lodging</option>
+	<option value="airport">airport</option>
+	<option value="train">train station</option>
+	<option value="subway">subway station</option>
+	<option value="bus">bus station</option>
+</select><br>
+<script type="text/javascript">
+	document.getElementById("category").value = "<?php echo isset($_POST["category"]) ? $_POST["category"] : "default" ?>";
+</script>
+<b>Distance (miles)</b><input type="text" name="distance" id="distance" placeholder="10" value="<?php echo isset($_POST["distance"]) ? $_POST["distance"] : "" ?>"><b> from</b>
+<input type="radio" name="location" id="here" value="here" <?php if(!isset($_POST["location"]) || $_POST["location"]=="here"){echo "checked";} ?> onchange="radioChange()">Here<br>
+<input style="position:relative;left:281px" type="radio" name="location" id="other_place" value="" <?php if(isset($_POST["location"]) && $_POST["location"]==""){echo "checked";} ?> onchange="radioChange()"><input style="position: relative;left:281px" type="text" name="location_custom" id="location_custom" placeholder="location" value="<?php echo isset($_POST["location_custom"]) ? $_POST["location_custom"] : "" ?>" required disabled><br>
+<input style="position: relative;left:55px;" type="submit" name="search" id="search" value="Search" disabled><button type="button" style="position: relative;left: 58px;"onclick="clearAll()">Clear</button><br>
+</form></td></tr>
+</table>
+</body>
+</html>
+

@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Travel and Entertainment Search</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.4.8/angular.js"></script>
+	<script src="https://code.angularjs.org/1.4.8/angular-animate.js"></script>
+	<style>
+		table#first{
+			border-radius: 25px;
+			border-collapse: separate;
+			border: 3px solid #ddd;
+			background-color: #f7f7f7;
+			margin: 20px auto;
+		}
+		#first th{
+			font-size: 22px;
+			height:60px;
+			font-weight: normal;
+			font-weight: bold;
+		}
+		#first td{
+			height:150px;
+			line-height: 160%;
+			text-align: left;
+		}
+		#norecords{
+			border-radius: 3px;
+			border-collapse: separate;
+			border: 0px;
+			background-color: #faebd7;
+			margin: 20px auto;
+		}
+		.btn-light{
+			color: black;
+			border: 1px solid #bbb;
+		}
+		.form-group.required .col-form-label:after {
+			content:"*";
+			color:red;
+		}
+		.help-block{
+			color:red;
+		}
+		.is-invalid{
+			border: 2px solid red;
+		}
+		.slide {
+			-webkit-transition: all cubic-bezier(0.250, 0.460, 0.450, 0.940) 1s;
+			-moz-transition: all cubic-bezier(0.250, 0.460, 0.450, 0.940) 1s;
+			-o-transition: all cubic-bezier(0.250, 0.460, 0.450, 0.940) 1s;
+			transition: all cubic-bezier(0.250, 0.460, 0.450, 0.940) 1s;
+			position: absolute;
+		}
+
+		.slide-left.ng-enter {
+			left: 100%;
+		}
+
+		.slide-left.ng-enter.ng-enter-active {
+			left: 0;
+		}
+
+		.slide-left.ng-leave {
+			left: 0;
+		}
+
+		.slide-left.ng-leave.ng-leave-active {
+			left: -100%;
+		}
+
+		.slide-right.ng-enter {
+			left: -100%;
+		}
+
+		.slide-right.ng-enter.ng-enter-active {
+			left: 0
+		}
+
+		.slide-right.ng-leave {
+			left: 0;
+		}
+
+		.slide-right.ng-leave.ng-leave-active {
+			left: 100%;
+		}
+	</style>
+	<script type="text/javascript">
+		$(document).ready(function(){
+			geoEnable = false;
+			$.getJSON('//ip-api.com/json?callback=?', function( data ) {
+				if(data) {
+					geoEnable = true;
+				}
+				var str_json = JSON.stringify(data);
+				$("#json_string").val(str_json);									
+			});
+		});
+
+		function fillInAddress(){
+		};
+
+		function initAutocomplete() {
+	        autocomplete = new google.maps.places.Autocomplete(
+	            (document.getElementById('location_custom')),
+	            {types: ['geocode']});
+	        autocomplete.addListener('place_changed', fillInAddress);
+	    };
+
+	    function generateTable(records){
+	    	if(records["results"].length==0){
+				$("#norecords").html("<tr><td>No records.</td></tr>");
+				$("#details").css("display","none");
+			}
+			else{
+				var i=0;
+		    	var text = "";
+		    	text+="<thead><tr><th scope='col'>#</th><th scope='col'>Category</th><th scope='col'>Name</th><th scope='col'>Address</th><th scope='col'>Favorite</th><th scope='col'>Details</th></tr></thead><tbody>";
+				for(;i<records["results"].length;i++){
+					text+="<tr><th scope='row'>"+(i+1)+"</th><td><img style='width:40px' src='"+records["results"][i]["icon"]+"'></img>"+"</td><td>"+records["results"][i]["name"]+"</td><td>"+records["results"][i]["vicinity"]+"</td><td><button type='button' class='btn btn-light'><span class='fa fa-star-o'></span></button></td><td><button type='button' class='btn btn-light'><span class='fa fa-chevron-right'></span></button></td></tr>";
+				}
+				text+="</tbody>";
+				curPages[pageIndex] = text;
+				$("#second").html(text);
+				$("#details").css("display","inline");
+			}
+			if(records.next_page_token != undefined && records.next_page_token.length > 0){
+				$("#next").css("visibility","visible");
+				next_page = records.next_page_token;
+				prePages[pageIndex] = next_page;
+			}
+			else{
+				$("#next").css("visibility","hidden");
+			}
+			if(pageIndex > 0){
+				$("#previous").css("visibility","visible");
+			}
+			else{
+				$("#previous").css("visibility","hidden");
+			}
+			$("#progressBar").css("visibility","hidden");
+	    };
+	</script>
+</head>
+<body>
+<table id="first" class="col-md-9">
+<tr><th>
+	<div class="row">
+		<div class="col-md-4"></div>
+		<div class="col-md-6">Travel and Entertainment Search</div>
+	</div>
+</th></tr>
+<tr><td>
+	<form method="POST" id="form" action="http://csci571-placesearch-env.us-east-2.elasticbeanstalk.com/place_back.php">
+		<div class="form-group required row">
+			<div class="col-md-2"></div>
+			<label for="keyword" class="col-md-2 col-form-label">Keyword</label>
+			<div class="col-md-6" style="display: inline-block;">
+				<input type="text" class="form-control col-md-12" id="keyword" name="keyword">
+				<span id="keywordMessage" style="display: none;" class="help-block">Please enter a keyword.</span>
+			</div>
+		</div>
+		<div class="form-group row">
+			<div class="col-md-2"></div>
+			<label for="category" class="col-md-2 col-form-label">Category</label>
+			<div class="col-md-4">
+				<select id="category" name="category" class="form-control col-md-12">
+					<option value="default" selected>Default</option>
+					<option value="airport">Airport</option>
+					<option value="amusement_park">Amusement Park</option>
+					<option value="aquarium">Aquarium</option>
+					<option value="art_gallery">Art Gallery</option>
+					<option value="bakery">Bakery</option>
+					<option value="bar">Bar</option>
+					<option value="beauty_salon">Beauty Salon</option>
+					<option value="bowling_alley">Bowling Alley</option>
+					<option value="bus_station">Bus Station</option>
+					<option value="cafe">Cafe</option>
+					<option value="campground">Campground</option>
+					<option value="car_rental">Car Rental</option>
+					<option value="casino">Casino</option>
+					<option value="lodging">Lodging</option>
+					<option value="movie_theater">Movie Theater</option>
+					<option value="museum">Museum</option>
+					<option value="night_club">Night Club</option>
+					<option value="park">Park</option>
+					<option value="parking">Parking</option>
+					<option value="restaurant">Restaurant</option>
+					<option value="shopping_mall">Shopping Mall</option>
+					<option value="stadium">Stadium</option>
+					<option value="subway_station">Subway Station</option>
+					<option value="taxi_stand">Taxi Stand</option>
+					<option value="train_station">Train Station</option>
+					<option value="transit_station">Transit Station</option>
+					<option value="travel_agency">Travel Agency</option>
+					<option value="zoo">Zoo</option>
+				</select>
+			</div>
+		</div>
+		<div class="form-group row">
+			<div class="col-md-2"></div>
+			<label for="distance" class="col-md-2 col-form-label">Distance(miles)</label>
+			<div class="col-md-4">
+				<input type="text" class="form-control col-md-12" id="distance" name="distance" placeholder="10">
+			</div>
+		</div>
+		<fieldset class="form-group">
+		    <div class="form-group required row">
+		      	<div class="col-md-2"></div>
+		      	<legend class="col-form-label col-md-2 pt-0">From</legend>
+		      	<div class="col-md-8">
+	        		<div class="form-check">
+		          		<input class="form-check-input" type="radio" name="place" id="here" value="here" checked>
+		          		<label class="form-check-label" for="here">Current location</label>
+        			</div>
+        			<div class="form-check">
+		          		<input class="form-check-input" type="radio" name="place" id="other_place" value="other_place">
+		          		<label class="form-check-label" for="other_place">Other. Please specify:</label>
+		          		<input type="text" class="form-control col-md-9" id="location_custom" name="location_custom" placeholder="Enter a location" disabled>
+		          		<span id="locationMessage" style="display: none;" class="help-block">Please enter a location.</span>
+        			</div>
+		      	</div>
+		    </div>
+		</fieldset>
+		<div class="form-group row mb-5">
+			<div class="col-md-2"></div>
+			<button type="submit" name="search" id="search" class="btn btn-primary ml-3" disabled><span class="fa fa-search"></span> Search</button>
+			<button type="button" id="clear" class="btn btn-light ml-1">Clear</button>
+		</div>
+		<input type="hidden" name="json_string" id="json_string" value="">
+		<input type="hidden" name="reviews" id="reviews" value="">
+</form></td></tr>
+</table>
+
+<ul class="nav nav-pills mb-5 d-flex justify-content-center" id="pills-tab" role="tablist">
+  <li class="nav-item">
+    <a class="nav-link active" id="results" data-toggle="pill" href="#pills_results" role="tab" aria-controls="pills_results" aria-selected="true">Results</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="favorites" data-toggle="pill" href="#pills_favorites" role="tab" aria-controls="pills_favorites" aria-selected="false">Favorites</a>
+  </li>
+</ul>
+
+<div class="progress" style="width: 80%;margin: auto;visibility:hidden;" id="progressBar">
+	<div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" style="width: 50%"></div>
+</div>
+
+<div class="tab-content container" id="pills-tabContent">
+  	<div class="tab-pane fade show active" id="pills_results" role="tabpanel" aria-labelledby="pills_results_tab">
+  		<div class="text-right"><button style="display: none;" type="button" id="details" class="btn btn-light mb-2" disabled>Details<span class='fa fa-chevron-right'></span></button></div>
+	  	<table id="second" class="table table-hover"></table>
+	  	<table id="norecords" class="col-md-11"></table>
+	  	<div class="text-center">
+	  		<button type="button" style="visibility:hidden;" class="btn btn-light mb-5" id="previous">Previous</button> <button type="button" style="visibility:hidden;" class="btn btn-light ml-2 mb-5" id="next">Next</button>
+	  	</div>
+  	</div>
+  <div class="tab-pane fade" id="pills_favorites" role="tabpanel" aria-labelledby="pills_favorites_tab"></div>
+</div>
+
+<div ng-app="animate">
+  <animate></animate>
+</div>
+
+<script type="text/javascript">
+	$("#search").click(function(){
+		$("#second").html("");
+		$("#norecords").html("");
+		$("#progressBar").css("visibility","visible");
+		pageIndex = 0;
+		curPages = new Object();
+		prePages = new Object();
+		next_page = "";
+		$("#previous").css("visibility","hidden");
+		$("#next").css("visibility","hidden");
+		$("#details").css("display","none");
+	});
+	$("#form").submit(function(e) {
+	    e.preventDefault();
+	    var inputData = $("#form").serialize();
+	    var actionurl = e.currentTarget.action;
+	    $.ajax({
+	            url: actionurl,
+	            type: 'POST',
+	            data: inputData,
+	            success: function(response) {
+	            	//console.log(response);
+	                var jsonObj=JSON.parse(response);
+	                generateTable(jsonObj);
+	            },
+	            error: function (response) {
+	                console.log('An error occurred.');
+	                console.log(response);
+	            }
+	    });
+	});
+	$('input[type=radio][name=place]').change(function() {
+        if (this.value == 'here') {
+        	$("#location_custom").removeClass("is-invalid");
+            $("#location_custom").prop("disabled",true);
+            $("#locationMessage").css("display","none");
+        }
+        else if (this.value == 'other_place') {
+            $("#location_custom").prop("disabled",false);
+        }
+    });
+    $("#clear").click(function(){
+    	$("#keyword").val("");
+    	$("#category").val("default");
+    	$("#distance").val("");
+    	$("#location_custom").val("");
+    	$("#location_custom").removeClass("is-invalid");
+        $("#locationMessage").css("display","none");
+    	$("#location_custom").prop("disabled",true);
+    	$("#here").prop("checked",true);
+    	$("#keyword").removeClass("is-invalid");
+        $("#keywordMessage").css("display","none");
+        $("#search").prop("disabled",true);
+        $("#second").html("");
+        $("#norecords").html("");
+        $("#next").css("visibility","hidden");
+        $("#previous").css("visibility","hidden");
+        $("#details").css("display","none");
+        $("#progressBar").css("visibility","hidden");
+    });
+
+    $("#keyword").bind("keyup focusout",function(){
+    	var string = this.value;
+    	var num = string.split(" ").length-1;
+    	if(string.length == 0 || num == string.length){
+    		$("#keywordMessage").css("display","inline");
+    		$("#keyword").addClass("is-invalid");
+    		$("#search").prop("disabled",true);
+    	}
+    	else{
+    		$("#keywordMessage").css("display","none");
+    		$("#keyword").removeClass("is-invalid");
+    		if(geoEnable == true && $("#locationMessage").css("display")=="none"){
+				var place = $('input[type=radio][name=place]').val();
+				if(place=="other_place" && $("#location_custom").val().length > 0 || place=="here"){
+					$("#search").prop("disabled",false);
+				}
+    		}
+    	}
+    });
+
+    $("#location_custom").bind("keyup focusout",function(){
+    	var string = this.value;
+    	var num = string.split(" ").length-1;
+    	if(string.length == 0 || num == string.length){
+    		$("#locationMessage").css("display","inline");
+    		$("#location_custom").addClass("is-invalid");
+    		$("#search").prop("disabled",true);
+    	}
+    	else{
+    		$("#locationMessage").css("display","none");
+    		$("#location_custom").removeClass("is-invalid");
+    		if(geoEnable == true){
+    			if($("#keywordMessage").css("display")=="none" && $("#keyword").val().length > 0){
+    				$("#search").prop("disabled",false);
+    			}
+    		}
+    	}
+    });
+
+    $("#next").click(function(){
+    	pageIndex += 1;
+    	window.setTimeout(function(){
+    		$.ajax({
+	            url: "http://csci571-placesearch-env.us-east-2.elasticbeanstalk.com/place_back.php",
+	            type: 'POST',
+	            data: "next_page="+next_page,
+	            async:false,
+	            success: function(response) {
+	                var jsonObj=JSON.parse(response);
+	                generateTable(jsonObj);
+	            },
+	            error: function (response) {
+	                console.log('An error occurred.');
+	                console.log(response);
+	            }
+	    	});
+	    },1000);
+    });
+
+    $("#previous").click(function(){
+    	pageIndex -= 1;
+    	$("#norecords").html("");
+    	$("#second").html(curPages[pageIndex]);
+    	next_page = prePages[pageIndex];
+    	if(pageIndex == 0){
+    		$("#previous").css("visibility","hidden");
+    	}
+    	$("#next").css("visibility","visible");
+    });
+
+var _app = angular.module("animate", ['ngAnimate']);
+_app.directive("animate", ['$timeout', function($timeout) {
+  return {
+    scope: {},
+    template: '<div>' +'</div>' +
+      '<div class="wrapper" style="position: relative; margin-top: 20px;">' +
+      '		<div id="resultPage" data-ng-if="index == 0" class="slide" ng-class="slideClass">' +
+      '         <button type="button" class="btn btn-light" data- data-ng-click="move(1)">' +
+      '				<div>Right</div>' +
+      '			</button><br>' + 'Content 1</div>' +
+      '		<div id="detailPage" data-ng-if="index == 1" class="slide" ng-class="slideClass">' + 
+      '			<button type="button" class="btn btn-light" data- data-ng-click="move(0)">' +
+      '				<div>Left</div>' +
+      '			</button><br>' + 'Content 2</div>' +
+      '</div>',
+    link: function(scope, elem, attr) {
+      scope.items = ["Right", "Left"]
+      scope.index = 0;
+      scope.slideClass = 'slide-left';
+
+      scope.move = function(index) {
+        scope.slideClass = index < scope.index
+                         ? scope.slideClass = 'slide-right'
+                         : scope.slideClass = 'slide-left';
+        
+        $timeout(function() {
+          scope.index = index;
+        });
+      }
+    }
+  }
+}]);
+
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBBVXWQdM85XFrhNJNMS4qc-lKdoBDieMk&libraries=places&callback=initAutocomplete" async defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</body>
+</html>
+

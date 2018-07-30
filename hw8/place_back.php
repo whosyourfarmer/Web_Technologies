@@ -6,7 +6,7 @@ header('Content-type: application/json');*/
 ?>
 
 <?php
-if(isset($_POST["json_string"]) && !empty($_POST["json_string"])):
+if(isset($_GET["json_string"]) && !empty($_GET["json_string"])):
 ?>
 <?php
 $lat="";
@@ -14,25 +14,25 @@ $lon="";
 $key="AIzaSyBBVXWQdM85XFrhNJNMS4qc-lKdoBDieMk";
 //$key_nearby="AIzaSyBxyXLzznNuDZAObsKYBy9nIpvkagUKDp4";
 $key_nearby="AIzaSyDZbSlea9jZ-xi57zCrbHjz2R9RCLMgN8Q";
-if($_POST["place"]=="here"){
-	$here=json_decode($_POST["json_string"],true);
+if($_GET["place"]=="here"){
+	$here=json_decode($_GET["json_string"],true);
 	$lat=$here["lat"];
 	$lon=$here["lon"];
 }
 else{
-	$addr=urlencode($_POST["location_custom"]);
+	$addr=urlencode($_GET["location_custom"]);
 	$url="https://maps.googleapis.com/maps/api/geocode/json?address=".$addr."&key=".$key;
 	$here=json_decode(file_get_contents($url),true);
 	$lat=$here["results"][0]["geometry"]["location"]["lat"];
 	$lon=$here["results"][0]["geometry"]["location"]["lng"];
 }
-if(!empty($_POST["distance"])){
-	$radius=strval((double)$_POST["distance"] * 1609.344);
+if(!empty($_GET["distance"])){
+	$radius=strval((double)$_GET["distance"] * 1609.344);
 }
 else{
 	$radius="16093.44";
 }
-$urlSearch="https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=".urlencode($lat).",".urlencode($lon)."&radius=".urlencode($radius)."&type=".$_POST["category"]."&keyword=".urlencode($_POST["keyword"])."&key=".$key_nearby;
+$urlSearch="https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=".urlencode($lat).",".urlencode($lon)."&radius=".urlencode($radius)."&type=".$_GET["category"]."&keyword=".urlencode($_GET["keyword"])."&key=".$key_nearby;
 $json_nearby=file_get_contents($urlSearch);
 $nearby=json_decode($json_nearby,true);
 
@@ -83,11 +83,11 @@ function request($target) {
     return $response;
 }
 
-if(!empty($_POST["name"])){
-    $url = "https://api.yelp.com/v3/businesses/matches/best?"."name=".urlencode($_POST["name"])."&city=".urlencode($_POST["city"])."&state=".$_POST["state"]."&country=".$_POST["country"]."&address1=".urlencode($_POST["address1"]);
+if(!empty($_GET["name"])){
+    $url = "https://api.yelp.com/v3/businesses/matches/best?"."name=".urlencode($_GET["name"])."&city=".urlencode($_GET["city"])."&state=".$_GET["state"]."&country=".$_GET["country"]."&address1=".urlencode($_GET["address1"]);
     $results = request($url);
     $bestMatch = json_decode($results,true);
-    if(sizeof($bestMatch["businesses"])>0 && $bestMatch["businesses"][0]["location"]["zip_code"]==$_POST["zip"])
+    if(sizeof($bestMatch["businesses"])>0 && $bestMatch["businesses"][0]["location"]["zip_code"]==$_GET["zip"])
     {
     	$id = $bestMatch["businesses"][0]["id"];
     	$reviewsUrl = "https://api.yelp.com/v3/businesses/".$id."/reviews";
@@ -101,10 +101,10 @@ if(!empty($_POST["name"])){
 ?>
 
 <?php
-if(!empty($_POST["next_page"])){
+if(!empty($_GET["next_page"])){
 	//$key_near="AIzaSyBxyXLzznNuDZAObsKYBy9nIpvkagUKDp4";
 	$key_near="AIzaSyDZbSlea9jZ-xi57zCrbHjz2R9RCLMgN8Q";
-	$url="https://maps.googleapis.com/maps/api/place/nearbysearch/json?pagetoken=".$_POST["next_page"]."&key=".$key_near;
+	$url="https://maps.googleapis.com/maps/api/place/nearbysearch/json?pagetoken=".$_GET["next_page"]."&key=".$key_near;
 	$next=file_get_contents($url);
 	echo $next;
 }

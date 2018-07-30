@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/octicons/4.4.0/font/octicons.css">
+<script type="text/javascript">
+$(document).ready(function(){
+    $("button").click(function(){
+        $.getJSON("//ip-api.com/json?callback=?", function(result){
+        	console.log(result);
+        });
+    });
+});
+</script>
+</head>
+<body>
+
+<table id="first" class="col-md-9">
+<tr><th>
+	<div class="row">
+		<div class="col-md-4"></div>
+		<div class="col-md-6">Travel and Entertainment Search</div>
+	</div>
+</th></tr>
+<tr><td>
+	<form method="POST" id="form" action="http://csci571-placesearch-env.us-east-2.elasticbeanstalk.com">
+		<div class="form-group required row">
+			<div class="col-md-2"></div>
+			<label for="keyword" class="col-md-2 col-form-label">Keyword</label>
+			<input type="text" class="form-control col-md-6" id="keyword" name="keyword" required>
+		</div>
+		<div class="form-group row">
+			<div class="col-md-2"></div>
+			<label for="category" class="col-md-2 col-form-label">Category</label>
+			<select id="category" name="category" class="form-control col-md-4">
+				<option value="default" selected>Default</option>
+				<option>Airport</option>
+				<option>Amusement Park</option>
+				<option>Aquarium</option>
+				<option>Art Gallery</option>
+				<option>Bakery</option>
+				<option>Bar</option>
+				<option>Beauty Salon</option>
+				<option>Bowling Alley</option>
+				<option>Bus Station</option>
+				<option>Cafe</option>
+				<option>Campground</option>
+				<option>Car Rental</option>
+				<option>Casino</option>
+				<option>Lodging</option>
+				<option>Movie Theater</option>
+				<option>Museum</option>
+				<option>Night Club</option>
+				<option>Park</option>
+				<option>Parking</option>
+				<option>Restaurant</option>
+				<option>Shopping Mall</option>
+				<option>Stadium</option>
+				<option>Subway Station</option>
+				<option>Taxi Stand</option>
+				<option>Train Station</option>
+				<option>Transit Station</option>
+				<option>Travel Agency</option>
+				<option>Zoo</option>
+			</select>
+		</div>
+		<div class="form-group row">
+			<div class="col-md-2"></div>
+			<label for="distance" class="col-md-2 col-form-label">Distance(miles)</label>
+			<input type="text" class="form-control col-md-4" id="distance" name="distance" placeholder="10">
+		</div>
+		<fieldset class="form-group">
+		    <div class="form-group required row">
+		      	<div class="col-md-2"></div>
+		      	<legend class="col-form-label col-md-2 pt-0">From</legend>
+		      	<div class="col-md-8">
+	        		<div class="form-check">
+		          		<input class="form-check-input" type="radio" name="place" id="here" value="here" checked>
+		          		<label class="form-check-label" for="here">Current location</label>
+        			</div>
+        			<div class="form-check">
+		          		<input class="form-check-input" type="radio" name="place" id="other_place" value="other_place">
+		          		<label class="form-check-label" for="other_place">Other. Please specify:</label>
+		          		<input type="text" class="form-control col-md-9" id="location_custom" name="location_custom" placeholder="Enter a location" disabled required>
+        			</div>
+		      	</div>
+		    </div>
+		</fieldset>
+		<div class="form-group row mb-5">
+			<div class="col-md-2"></div>
+			<button type="submit" name="search" class="btn btn-primary ml-3" disabled><span class="octicon octicon-search"></span>Search</button>
+			<button type="button" id="clear" class="btn btn-light ml-1">Clear</button>
+		</div>
+		<input type="hidden" name="json_string" id="json_string" value="">
+		<input type="hidden" name="reviews" id="reviews" value="">
+</form></td></tr>
+</table>
+
+<script type="text/javascript">
+	$("#form").submit(function(e) {
+	    //prevent Default functionality
+	    e.preventDefault();
+	    //get the action-url of the form
+	    var actionurl = e.currentTarget.action;
+	    //do your own request an handle the results
+	    $.ajax({
+	            url: actionurl,
+	            type: 'post',
+	            dataType: 'application/json',
+	            data: $("#form").serialize(),
+	            success: function(data) {
+	                var jsonObj=JSON.parse(data);
+	            }
+	    });
+	});
+</script>
+
+<div></div>
+
+</body>
+</html>
